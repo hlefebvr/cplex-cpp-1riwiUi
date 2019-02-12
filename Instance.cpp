@@ -1,0 +1,112 @@
+//
+// Created by Realopt on 2019-02-12.
+//
+
+#include <algorithm>
+#include <regex>
+#include <iostream>
+#include <fstream>
+
+#include "Instance.h"
+
+ostream& operator<<(ostream& os, const Job& x) {
+    return os << "job " << x._id << " [" << x._release_date << ", " << x._deadline << "], p = " << x._processing_time << ", w = " << x._weight;
+}
+
+ostream &operator<<(ostream &os, const JobOccurence&  x) {
+    return os << "job occurence from " << x._from << " to " << x._to << " (comming from job " << x._parent_job._id << ")";
+}
+
+Instance::Instance(const string &filename, bool verbose) : _instance_filename(filename), _verbose(verbose) {
+    load_jobs_from_instance();
+    build_occurences_from_jobs();
+    apply_edf_rule();
+}
+
+vector<string> Instance::get_next_row(ifstream& reader) const {
+    char* placeholder = new char[MAX_LINE_SIZE];
+    reader.getline(placeholder, MAX_LINE_SIZE);
+    string line(placeholder);
+
+    regex reg = regex("[[:alnum:][:punct:]]+");
+    smatch match;
+
+    vector<string> cols;
+    while( regex_search(line, match, reg) ) {
+        cols.push_back(match[0]);
+        line = match.suffix().str();
+    }
+
+    delete[] placeholder;
+
+    return cols;
+}
+
+void Instance::load_jobs_from_instance() {
+    if(_verbose) cout << "Loading jobs from instance file :\n---------------------------------" << endl;
+
+    enum COLUMN { WEIGHT, RELEASE_DATE, DEADLINE, PROCESSING_TIME };
+
+    ifstream reader = ifstream(_instance_filename, ios::in);
+    if (reader.fail()) throw runtime_error("Could not open instance file");
+
+    get_next_row(reader); // skip the header
+
+    unsigned int id = 0;
+    while (!reader.eof()) {
+        auto row = get_next_row(reader);
+
+        if (row.size() == 4) {
+            const int weight = stoi(row[COLUMN::WEIGHT]);
+            const int release_date = stoi(row[COLUMN::RELEASE_DATE]);
+            const int deadline = stoi(row[COLUMN::DEADLINE]);
+            const int processing_time = stoi(row[COLUMN::PROCESSING_TIME]);
+
+            const Job *new_job = new Job(id, release_date, deadline, processing_time, weight);
+            if (_verbose) cout << "Creating " << *new_job << endl;
+            _jobs.emplace_back(new_job);
+
+            id += 1;
+        }
+    }
+
+    reader.close();
+}
+
+void Instance::build_occurences_from_jobs() {
+    if (_verbose) cout << "Sorting jobs by release date (may improve but not in worst case)" << endl;
+    sort(_jobs.begin(), _jobs.end(), [](const Job* A, const Job* B) { return A->_release_date < B->_release_date; });
+
+    for (unsigned long int i = 0, n_jobs = _jobs.size() ; i < n_jobs ; i += 1) {
+        const Job& job_i = *_jobs[i];
+        if(_verbose) cout << "Creating job occurences for job " << job_i << endl;
+        if (_max_deadline < job_i._deadline) _max_deadline = job_i._deadline;
+
+        for (unsigned long int j = i + 1 ; j < n_jobs ; j += 1) {
+            const Job& job_j = *_jobs[j];
+
+            if (job_i._deadline > job_j._deadline && job_i._release_date + job_i._processing_time + job_j._processing_time < job_j._deadline) {
+                const int from = job_i._release_date;
+                const int to = job_j._deadline;
+                auto new_occurence = new JobOccurence(from, to, job_i);
+
+                if (_verbose) cout << "\tCreating " << *new_occurence << endl;
+                _occurences.emplace_back(new_occurence);
+            } else if (job_i._deadline <= job_j._release_date) {
+                break;
+            }
+        }
+
+        auto new_occurence = new JobOccurence(job_i._release_date, job_i._deadline, job_i, true);
+        if (_verbose) cout << "\tCreating default " << *new_occurence << endl;
+        _occurences.emplace_back(new_occurence);
+    }
+
+    if (_verbose) cout << "Done. (" + to_string(_occurences.size()) + " occurences have been generated)" << endl;
+}
+
+void Instance::apply_edf_rule() {
+    sort(_occurences.begin(), _occurences.end(), [](const JobOccurence* A, const JobOccurence* B){
+        return A->_to < B->_to;
+    });
+}
