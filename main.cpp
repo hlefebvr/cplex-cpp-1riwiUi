@@ -18,8 +18,13 @@ int main(int argc, char** argv) {
 
     Instance instance  = Instance(instance_filename, verbose);
 
-    MinimizeTardyJobsWithModelA solver_A = MinimizeTardyJobsWithModelA(instance);
+    /* MinimizeTardyJobsWithModelA solver_A = MinimizeTardyJobsWithModelA(instance);
     solver_A.build_model();
+    solver_A.solve(); */
+
+    MinimizeTardyJobsWithModelMMKP solver_MMKP = MinimizeTardyJobsWithModelMMKP(instance);
+    solver_MMKP.build_model();
+    solver_MMKP.solve();
 
     return 0;
 }
