@@ -23,8 +23,9 @@ void MinimizeTardyJobsModel::build_model() {
         const JobOccurence& job_occ = *occurences.at(k);
 
         // create variable x_k and t_k
-        _x.add(IloBoolVar(_env));
-        _t.add(IloNumVar(_env));
+
+        _x.add(IloBoolVar(_env, ("x_" + to_string(k)).c_str()));
+        _t.add(IloNumVar(_env, ("t_" + to_string(k)).c_str()));
 
         // append valuation in objective
         objective += job_occ._weight * _x[k];
@@ -34,11 +35,14 @@ void MinimizeTardyJobsModel::build_model() {
     }
 
     // add objective
-    _constraints.add(IloMinimize(_env, objective));
+    _constraints.add(IloMinimize(_env, objective)).setName("objective");
 
     // create constraints per group
-    for (const IloExpr& constraint : assignment_constraint)
-        _constraints.add(constraint == 1);
+    unsigned int i = 0;
+    for (const IloExpr& constraint : assignment_constraint) {
+        _constraints.add(constraint == 1).setName(("one_among_group_" + to_string(i)).c_str());
+        i += 1;
+    }
 
     if (_instance.verbose()) cout << "Creating custom constraints" << endl;
     create_other_constraints();
@@ -98,12 +102,12 @@ void MinimizeTardyJobsWithModelA::create_other_constraints() {
     for (unsigned long int k = 0, n = occurences.size() ; k < n ; k += 1) {
         const JobOccurence &job_occ = *occurences.at(k);
 
-        _constraints.add( _t[k] - (job_occ._release+ job_occ._processing_time) * _x[k] >= 0 );
+        _constraints.add( _t[k] - (job_occ._release+ job_occ._processing_time) * _x[k] >= 0 ).setName(("release_date_" + to_string(k)).c_str());
 
-        _constraints.add( _t[k] <= job_occ._deadline );
+        _constraints.add( _t[k] <= job_occ._deadline ).setName(("deadline_" + to_string(k)).c_str());
 
         if (k == 0) continue;
-        _constraints.add( _t[k] - _t[k-1] - job_occ._processing_time * _x[k] >= 0 );
+        _constraints.add( _t[k] - _t[k-1] - job_occ._processing_time * _x[k] >= 0 ).setName(("overlap_" + to_string(k)).c_str());
     }
 }
 
@@ -126,9 +130,9 @@ void MinimizeTardyJobsWithModelMMKP::create_other_constraints() {
 
             constraint += (job_k._release + job_k._processing_time) * _x[k];
 
-            _constraints.add( constraint <= job_l._deadline);
+            _constraints.add( constraint <= job_l._deadline).setName(("MMKP_" + to_string(k) + "_" + to_string(l)).c_str());
         }
 
-        _constraints.add( _t[k] == 0 );
+        _constraints.add( _t[k] == 0 ).setName(("untracked_t_" + to_string(k)).c_str());
     }
 }
