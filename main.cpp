@@ -22,11 +22,11 @@ int main(int argc, char** argv) {
     solver_A.build_model();
     solver_A.solve();
 
-    /* cout << endl << endl;
+    cout << endl << endl;
 
     MinimizeTardyJobsWithModelMMKP solver_MMKP = MinimizeTardyJobsWithModelMMKP(instance);
     solver_MMKP.build_model();
-    solver_MMKP.solve(); */
+    solver_MMKP.solve();
 
     return 0;
 }

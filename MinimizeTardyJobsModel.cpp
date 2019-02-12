@@ -24,7 +24,7 @@ void MinimizeTardyJobsModel::build_model() {
 
         // create variable x_k and t_k
         _x.add(IloBoolVar(_env));
-        if (_with_t) _t.add(IloNumVar(_env));
+        _t.add(IloNumVar(_env));
 
         // append valuation in objective
         objective += job_occ._weight * _x[k];
@@ -119,8 +119,8 @@ void MinimizeTardyJobsWithModelMMKP::create_other_constraints() {
 
             IloExpr constraint = IloExpr(_env);
 
-            for (unsigned long int kk = k + 1 ; kk < n ; kk += 1) {
-                const JobOccurence &job_kk = *occurences.at(l);
+            for (unsigned long int kk = k + 1 ; kk <= l ; kk += 1) {
+                const JobOccurence &job_kk = *occurences.at(kk);
                 constraint += job_kk._processing_time * _x[kk];
             }
 
@@ -128,5 +128,7 @@ void MinimizeTardyJobsWithModelMMKP::create_other_constraints() {
 
             _constraints.add( constraint <= job_l._deadline);
         }
+
+        _constraints.add( _t[k] == 0 );
     }
 }
