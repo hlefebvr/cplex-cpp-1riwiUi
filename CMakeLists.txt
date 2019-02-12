@@ -13,7 +13,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -DNDEBUG -DIL_STD")
 set(CMAKE_CXX_STANDARD 14)
 
 # project files
-add_executable(deterministic main.cpp Instance.cpp Instance.h)
+add_executable(deterministic main.cpp Instance.cpp Instance.h MinimizeTardyJobsModel.cpp MinimizeTardyJobsModel.h)
 
 # create symbolic link to data folder
 execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/${dir_name}/data/   ${CMAKE_CURRENT_BINARY_DIR}/${dir_name}/data)

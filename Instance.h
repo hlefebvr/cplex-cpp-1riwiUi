@@ -43,6 +43,9 @@ struct JobOccurence {
             : _from(from), _to(to), _parent_job(parent_job), _is_last_occurence(is_last_occurence) {}
 };
 
+/**
+ * Instance loader class
+ */
 class Instance {
     const string _instance_filename;
     const bool _verbose;

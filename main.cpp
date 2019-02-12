@@ -1,7 +1,7 @@
 #include <string>
-#include <ilcplex/ilocplex.h>
 
 #include "Instance.h"
+#include "MinimizeTardyJobsModel.h"
 
 using namespace std;
 
@@ -17,6 +17,9 @@ int main(int argc, char** argv) {
     const bool verbose = argc == 3 && string(argv[2]) == "-v";
 
     Instance instance  = Instance(instance_filename, verbose);
+
+    MinimizeTardyJobsWithModelA solver_A = MinimizeTardyJobsWithModelA(instance);
+    solver_A.build_model();
 
     return 0;
 }

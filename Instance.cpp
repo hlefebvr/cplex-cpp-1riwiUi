@@ -21,6 +21,8 @@ Instance::Instance(const string &filename, bool verbose) : _instance_filename(fi
     load_jobs_from_instance();
     build_occurences_from_jobs();
     apply_edf_rule();
+
+    if (_verbose) cout << endl;
 }
 
 vector<string> Instance::get_next_row(ifstream& reader) const {
@@ -74,7 +76,7 @@ void Instance::load_jobs_from_instance() {
 }
 
 void Instance::build_occurences_from_jobs() {
-    if (_verbose) cout << "Sorting jobs by release date (may improve but not in worst case)" << endl;
+    if (_verbose) cout << "Sorting jobs by release date" << endl;
     sort(_jobs.begin(), _jobs.end(), [](const Job* A, const Job* B) { return A->_release_date < B->_release_date; });
 
     for (unsigned long int i = 0, n_jobs = _jobs.size() ; i < n_jobs ; i += 1) {
