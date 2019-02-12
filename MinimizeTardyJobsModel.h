@@ -12,12 +12,11 @@
 class MinimizeTardyJobsModel {
 protected:
     const Instance& _instance;
-    IloEnv env;
+    IloEnv _env;
+    IloModel _constraints = IloModel(_env);
+    IloBoolVarArray _x = IloBoolVarArray(_env);
+    IloNumVarArray _t = IloNumVarArray(_env);
 
-    void create_x_variables();
-    void create_t_variables();
-    void create_objective();
-    void create_one_selection_per_group_constraint();
     virtual void create_other_constraints() = 0;
 public:
     explicit MinimizeTardyJobsModel(const Instance& instance);
