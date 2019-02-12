@@ -49,7 +49,10 @@ void MinimizeTardyJobsModel::solve() {
     ofstream logout = ofstream("cplex.log", ios::out);
 
     cplex.setOut(logout);
-    cplex.exportModel("lpex1.lp");
+    if(_instance.verbose()) {
+        cout << "Exporting cplex model to lpex1.lp" << endl;
+        cplex.exportModel("lpex1.lp");
+    }
 
     if (_instance.verbose()) cout << "Launching Cplex solver..." << endl;
     cplex.solve();
@@ -59,15 +62,28 @@ void MinimizeTardyJobsModel::solve() {
 
         cout << "Objective value = " << cplex.getObjValue() << endl;
 
-        IloNumArray vals(_env);
+        IloNumArray x = IloNumArray(_env);
+        IloNumArray t = IloNumArray(_env);
 
-        cplex.getValues(vals, _x);
-        cout << "x = " << vals << endl;
+        cplex.getValues(x, _x);
+        cplex.getValues(t, _t);
 
-        if (_with_t) {
-            cplex.getValues(vals, _t);
-            cout << "t = " << vals << endl;
+        const vector<const JobOccurence*>& occurences = _instance.occurences();
+        vector<unsigned int> tardy_ids;
+
+        for (unsigned long int i = 0, n = occurences.size() ; i < n ; i += 1) {
+            if (x[i] == 1) {
+                const JobOccurence& job_occ = *occurences.at(i);
+                if (job_occ._processing_time > 0)
+                    cout << "job " << job_occ._parent_job_id << " from " << t[i] - job_occ._processing_time << " to " << t[i] << ", p = " << job_occ._processing_time << endl;
+                else
+                    tardy_ids.emplace_back(job_occ._parent_job_id);
+            }
         }
+
+        cout << "Tardy jobs : (";
+        for (unsigned int id : tardy_ids) cout << id << ", ";
+        cout << ")" << endl;
     }
 
     logout.close();
