@@ -14,7 +14,7 @@ protected:
     const Instance& _instance;
     const bool _with_t;
     IloEnv _env;
-    IloModel _constraints = IloModel(_env);
+    IloModel _constraints = IloModel(_env, "Minimize number of tardy jobs");
     IloBoolVarArray _x = IloBoolVarArray(_env);
     IloNumVarArray _t = IloNumVarArray(_env);
 

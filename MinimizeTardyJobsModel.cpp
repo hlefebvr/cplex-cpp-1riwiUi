@@ -17,7 +17,8 @@ void MinimizeTardyJobsModel::build_model() {
 
     IloExpr objective = IloExpr(_env);
     vector<IloExpr> assignment_constraint;
-    assignment_constraint.assign(_instance.jobs().size(), IloExpr(_env));
+    for (unsigned long int i = 0, n = _instance.jobs().size() ; i < n ; i += 1)
+        assignment_constraint.emplace_back(IloExpr(_env));
     for (unsigned long int k = 0, n = occurences.size() ; k < n ; k += 1) {
         const JobOccurence& job_occ = *occurences.at(k);
 
@@ -48,6 +49,7 @@ void MinimizeTardyJobsModel::solve() {
     ofstream logout = ofstream("cplex.log", ios::out);
 
     cplex.setOut(logout);
+    cplex.exportModel("lpex1.lp");
 
     if (_instance.verbose()) cout << "Launching Cplex solver..." << endl;
     cplex.solve();
