@@ -1,3 +1,4 @@
-# cplex models for 1|r_i|\sum w_i U_i
+# Cplex models for minimizing the weighted number of tardy jobs
 
-All models refer to [this article from B. Detienne (INRIA)](https://hal.inria.fr/hal-00880908/)
+- 1|r_i|\sum w_i U_i (NP-hard)
+- All models refer to [this article from B. Detienne (INRIA)](https://hal.inria.fr/hal-00880908/)
