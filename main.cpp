@@ -1,7 +1,10 @@
 #include <iostream>
 #include <ilcplex/ilocplex.h>
 
+using namespace std;
+
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    IloEnv env;
+
     return 0;
 }
