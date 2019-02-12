@@ -14,7 +14,7 @@ ostream& operator<<(ostream& os, const Job& x) {
 }
 
 ostream &operator<<(ostream &os, const JobOccurence&  x) {
-    return os << "job occurence from " << x._from << " to " << x._to << " (comming from job " << x._parent_job._id << ")";
+    return os << "job occurence from " << x._release << " to " << x._deadline<< " (comming from job " << x._parent_job_id << ")";
 }
 
 Instance::Instance(const string &filename, bool verbose) : _instance_filename(filename), _verbose(verbose) {
@@ -90,7 +90,7 @@ void Instance::build_occurences_from_jobs() {
             if (job_i._deadline > job_j._deadline && job_i._release_date + job_i._processing_time + job_j._processing_time < job_j._deadline) {
                 const int from = job_i._release_date;
                 const int to = job_j._deadline;
-                auto new_occurence = new JobOccurence(from, to, job_i);
+                auto new_occurence = new JobOccurence(job_i._id, from, to, 0, job_i._processing_time);
 
                 if (_verbose) cout << "\tCreating " << *new_occurence << endl;
                 _occurences.emplace_back(new_occurence);
@@ -99,8 +99,12 @@ void Instance::build_occurences_from_jobs() {
             }
         }
 
-        auto new_occurence = new JobOccurence(job_i._release_date, job_i._deadline, job_i, true);
+        auto new_occurence = new JobOccurence(job_i._id, job_i._release_date, job_i._deadline, 0, job_i._processing_time);
         if (_verbose) cout << "\tCreating default " << *new_occurence << endl;
+        _occurences.emplace_back(new_occurence);
+
+        new_occurence = new JobOccurence(job_i._id, 0, 0, job_i._weight, 0);
+        if (_verbose) cout << "\tCreating tardy fictious " << *new_occurence << endl;
         _occurences.emplace_back(new_occurence);
     }
 
@@ -109,6 +113,6 @@ void Instance::build_occurences_from_jobs() {
 
 void Instance::apply_edf_rule() {
     sort(_occurences.begin(), _occurences.end(), [](const JobOccurence* A, const JobOccurence* B){
-        return A->_to < B->_to;
+        return A->_deadline < B->_deadline;
     });
 }

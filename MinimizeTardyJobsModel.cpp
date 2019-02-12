@@ -27,10 +27,10 @@ void MinimizeTardyJobsModel::build_model() {
         if (_with_t) _t.add(IloNumVar(_env));
 
         // append valuation in objective
-        objective += job_occ._parent_job._weight * _x[k];
+        objective += job_occ._weight * _x[k];
 
         // group occurences by job
-        assignment_constraint[job_occ._parent_job._id] += _x[k];
+        assignment_constraint[job_occ._parent_job_id] += _x[k];
     }
 
     // add objective
@@ -82,12 +82,12 @@ void MinimizeTardyJobsWithModelA::create_other_constraints() {
     for (unsigned long int k = 0, n = occurences.size() ; k < n ; k += 1) {
         const JobOccurence &job_occ = *occurences.at(k);
 
-        _constraints.add( _t[k] - (job_occ._from + job_occ._parent_job._processing_time) * _x[k] >= 0 );
+        _constraints.add( _t[k] - (job_occ._release+ job_occ._processing_time) * _x[k] >= 0 );
 
-        _constraints.add( _t[k] <= job_occ._to );
+        _constraints.add( _t[k] <= job_occ._deadline );
 
         if (k == 0) continue;
-        _constraints.add( _t[k] - _t[k-1] - job_occ._parent_job._processing_time * _x[k] >= 0 );
+        _constraints.add( _t[k] - _t[k-1] - job_occ._processing_time * _x[k] >= 0 );
     }
 }
 
@@ -105,12 +105,12 @@ void MinimizeTardyJobsWithModelMMKP::create_other_constraints() {
 
             for (unsigned long int kk = k + 1 ; kk < n ; kk += 1) {
                 const JobOccurence &job_kk = *occurences.at(l);
-                constraint += job_kk._parent_job._processing_time * _x[kk];
+                constraint += job_kk._processing_time * _x[kk];
             }
 
-            constraint += (job_k._from + job_k._parent_job._processing_time) * _x[k];
+            constraint += (job_k._release + job_k._processing_time) * _x[k];
 
-            _constraints.add( constraint <= job_l._to );
+            _constraints.add( constraint <= job_l._deadline);
         }
     }
 }

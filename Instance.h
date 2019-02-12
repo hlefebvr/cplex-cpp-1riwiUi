@@ -32,15 +32,16 @@ struct Job {
  * Job occurence of job _parent_job from _from to _to
  */
 struct JobOccurence {
-    const Job& _parent_job;
-    const int _from;
-    const int _to;
-    const bool _is_last_occurence;
+    const double _release;
+    const double _deadline;
+    const double  _weight;
+    const double _processing_time;
+    const unsigned int _parent_job_id;
 
     friend ostream& operator<<(ostream& os, const JobOccurence& x);
 
-    JobOccurence(const int from, const int to, const Job& parent_job, const bool is_last_occurence = false)
-            : _from(from), _to(to), _parent_job(parent_job), _is_last_occurence(is_last_occurence) {}
+    explicit JobOccurence(unsigned int parent_id, double release, double deadline, double weight, double processing_time)
+        : _parent_job_id(parent_id), _release(release), _deadline(deadline), _weight(weight), _processing_time(processing_time) {}
 };
 
 /**

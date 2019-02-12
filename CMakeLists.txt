@@ -2,14 +2,14 @@ cmake_minimum_required(VERSION 3.13)
 project(deterministic)
 
 # folder for cmake files
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # using cplex lib
 add_definitions(-DUSE_CPLEX)
 find_package(CPLEX REQUIRED)
 include_directories(${CPLEX_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${CPLEX_LIBRARIES})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -DNDEBUG -DIL_STD")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -DNDEBUG -DIL_STD -pthread -Wl,--no-as-needed -ldl")
 set(CMAKE_CXX_STANDARD 14)
 
 # project files
