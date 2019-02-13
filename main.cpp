@@ -16,7 +16,8 @@ int main(int argc, char** argv) {
     const string instance_filename = string(argv[1]);
     const bool verbose = argc == 3 && string(argv[2]) == "-v";
 
-    Instance instance  = Instance(instance_filename, verbose);
+    Instance instance = Instance(instance_filename, verbose);
+    Instance reversed = Instance::reverse(instance);
 
     MinimizeTardyJobsWithModelA solver_A = MinimizeTardyJobsWithModelA(instance);
     solver_A.build_model();
@@ -27,6 +28,12 @@ int main(int argc, char** argv) {
     MinimizeTardyJobsWithModelMMKP solver_MMKP = MinimizeTardyJobsWithModelMMKP(instance);
     solver_MMKP.build_model();
     solver_MMKP.solve();
+
+    cout << endl << endl;
+
+    MinimizeTardyJobsWithModelB solver_B = MinimizeTardyJobsWithModelB(reversed);
+    solver_B.build_model();
+    solver_B.solve();
 
     return 0;
 }

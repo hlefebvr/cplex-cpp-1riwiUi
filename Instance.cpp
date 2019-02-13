@@ -64,7 +64,7 @@ void Instance::load_jobs_from_instance() {
             const int deadline = stoi(row[COLUMN::DEADLINE]);
             const int processing_time = stoi(row[COLUMN::PROCESSING_TIME]);
 
-            const Job *new_job = new Job(id, release_date, deadline, processing_time, weight);
+            const Job *new_job = new Job(id, release_date, deadline, weight, processing_time);
             if (_verbose) cout << "Creating " << *new_job << endl;
             _jobs.emplace_back(new_job);
 
@@ -115,4 +115,20 @@ void Instance::apply_edf_rule() {
     sort(_occurences.begin(), _occurences.end(), [](const JobOccurence* A, const JobOccurence* B){
         return A->_deadline < B->_deadline;
     });
+}
+
+Instance Instance::reverse(const Instance& instance) {
+    return Instance(instance, true);
+}
+
+Instance::Instance(const Instance& instance, bool) : _instance_filename(instance._instance_filename), _verbose(instance._verbose) {
+    const int dmax = instance._max_deadline;
+
+    for (const Job* job : instance._jobs)
+        _jobs.emplace_back(new Job(job->_id, dmax - job->_deadline, dmax - job->_release_date, job->_weight, job->_processing_time));
+
+    for (const JobOccurence* job_occ : instance._occurences)
+        _occurences.emplace_back(new JobOccurence(job_occ->_parent_job_id, dmax - job_occ->_deadline, dmax - job_occ->_release, job_occ->_weight, job_occ->_processing_time));
+
+    _max_deadline = dmax - _occurences.front()->_release;
 }

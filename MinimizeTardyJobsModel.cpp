@@ -8,7 +8,7 @@
 #include <fstream>
 
 // Abstract Model
-MinimizeTardyJobsModel::MinimizeTardyJobsModel(const Instance &instance, bool with_t) : _instance(instance), _with_t(with_t) {}
+MinimizeTardyJobsModel::MinimizeTardyJobsModel(const Instance &instance) : _instance(instance) {}
 
 void MinimizeTardyJobsModel::build_model() {
     if (_instance.verbose()) cout << "Building model" << endl;
@@ -111,7 +111,8 @@ void MinimizeTardyJobsWithModelA::create_other_constraints() {
     }
 }
 
-MinimizeTardyJobsWithModelMMKP::MinimizeTardyJobsWithModelMMKP(const Instance &instance) : MinimizeTardyJobsModel(instance, false) {}
+// Model MMKP
+MinimizeTardyJobsWithModelMMKP::MinimizeTardyJobsWithModelMMKP(const Instance &instance) : MinimizeTardyJobsModel(instance) {}
 
 void MinimizeTardyJobsWithModelMMKP::create_other_constraints() {
     const vector<const JobOccurence*>& occurences = _instance.occurences();
@@ -134,5 +135,37 @@ void MinimizeTardyJobsWithModelMMKP::create_other_constraints() {
         }
 
         _constraints.add( _t[k] == 0 ).setName(("untracked_t_" + to_string(k)).c_str());
+    }
+}
+
+
+// Model B
+MinimizeTardyJobsWithModelB::MinimizeTardyJobsWithModelB(const Instance &reversed_instance) : MinimizeTardyJobsModel(reversed_instance) {
+    const vector<const JobOccurence*>& occurences = _instance.occurences();
+
+    for (unsigned long int k = 0, n = occurences.size() ; k < n ; k += 1) {
+        const JobOccurence &job_k = *occurences.at(k);
+
+        int maximum = 0;
+        for (unsigned long int l = k + 1, n = occurences.size() ; l < n ; l += 1) {
+            const JobOccurence &job_l = *occurences.at(l);
+            maximum = max(maximum, job_l._deadline - job_k._deadline);
+        }
+        _M.emplace_back( max(0, maximum) );
+    }
+}
+
+void MinimizeTardyJobsWithModelB::create_other_constraints() {
+    const vector<const JobOccurence*>& occurences = _instance.occurences();
+
+    for (unsigned long int k = 0, n = occurences.size() ; k < n ; k += 1) {
+        const JobOccurence &job_k = *occurences.at(k);
+
+        _constraints.add( _t[k] >= job_k._release );
+
+        _constraints.add( _t[k] + job_k._processing_time * _x[k] - _M[k] * (1 - _x[k]) <= job_k._deadline );
+
+        if (k == 0) continue;
+        _constraints.add( _t[k-1] - _t[k] - job_k._processing_time * _x[k] >= 0 );
     }
 }

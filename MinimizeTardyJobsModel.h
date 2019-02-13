@@ -12,7 +12,6 @@
 class MinimizeTardyJobsModel {
 protected:
     const Instance& _instance;
-    const bool _with_t;
     IloEnv _env;
     IloModel _constraints = IloModel(_env, "Minimize number of tardy jobs");
     IloBoolVarArray _x = IloBoolVarArray(_env);
@@ -20,7 +19,7 @@ protected:
 
     virtual void create_other_constraints() = 0;
 public:
-    explicit MinimizeTardyJobsModel(const Instance& instance, bool with_t = true);
+    explicit MinimizeTardyJobsModel(const Instance& instance);
     void build_model();
     void solve();
 };
@@ -39,5 +38,12 @@ public:
     explicit MinimizeTardyJobsWithModelMMKP(const Instance& instance);
 };
 
+class MinimizeTardyJobsWithModelB : public MinimizeTardyJobsModel {
+protected:
+    vector<int> _M;
+    void create_other_constraints() override;
+public:
+    explicit MinimizeTardyJobsWithModelB(const Instance& reversed_instance);
+};
 
 #endif //DETERMINISTIC_MINIMIZETARDYJOBSMODEL_H

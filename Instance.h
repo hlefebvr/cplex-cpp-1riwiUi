@@ -24,7 +24,7 @@ struct Job {
 
     friend ostream& operator<<(ostream& os, const Job& x);
 
-    Job(const unsigned int id, const int release_date, const int deadline, const int processing_time, const int weight)
+    Job(const unsigned int id, const int release_date, const int deadline, const int weight, const int processing_time)
             : _id(id), _release_date(release_date), _deadline(deadline), _processing_time(processing_time), _weight(weight) {}
 };
 
@@ -32,10 +32,10 @@ struct Job {
  * Job occurence of job _parent_job from _from to _to
  */
 struct JobOccurence {
-    const double _release;
-    const double _deadline;
-    const double  _weight;
-    const double _processing_time;
+    const int _release;
+    const int _deadline;
+    const int  _weight;
+    const int _processing_time;
     const unsigned int _parent_job_id;
 
     friend ostream& operator<<(ostream& os, const JobOccurence& x);
@@ -58,13 +58,18 @@ class Instance {
     void build_occurences_from_jobs();
     void apply_edf_rule();
     vector<string> get_next_row(ifstream& reader) const;
+
+    Instance(const Instance& instance, bool);
 public:
-    explicit Instance(const string& filename, bool verbose);
+    Instance(const string& filename, bool verbose);
     const vector<const Job*>& jobs() const { return _jobs; }
     const vector<const JobOccurence*>& occurences() const { return _occurences; }
     bool verbose() const { return _verbose; }
     int max_deadline() const { return _max_deadline; }
     string instance_name() const { return _instance_filename;}
+
+    static Instance reverse(const Instance& instance);
 };
+
 
 #endif //DETERMINISTIC_INSTANCE_H
