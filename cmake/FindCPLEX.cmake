@@ -43,6 +43,7 @@ elseif(UNIX)
     find_library(CPLEX_CPP_LIBRARY libcplex.a x HINTS "${CPLEX_DIR}/lib/x86-64_linux/static_pic")
     find_library(CONCERT_CPP_LIBRARY libconcert.a libcplexdistmip.a HINTS "${CONCERT_DIR}/lib/x86-64_linux/static_pic")
     find_library(CPLEX_ILO_CPP_LIBRARY libilocplex.a HINTS "${CPLEX_DIR}/lib/x86-64_linux/static_pic")
+        set(LINUX_CXX_FLAGS "-Wno-ignored-attributes --no-as-needed -ldl")
     #find_library(CPLEX_DIST_CPP_LIBRARY libcplexdistmip.a HINTS "${CPLEX_DIR}/lib/x86-64_linux/static_pic")
 endif()
 
