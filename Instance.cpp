@@ -14,7 +14,7 @@ ostream& operator<<(ostream& os, const Job& x) {
 }
 
 ostream &operator<<(ostream &os, const JobOccurence&  x) {
-    return os << "job occurence from " << x._release << " to " << x._deadline<< " (comming from job " << x._parent_job_id << ")";
+    return os << "job occurence from " << x._release << " to " << x._deadline << ", w = " <<  x._weight << " (comming from job " << x._parent_job_id << ")";
 }
 
 Instance::Instance(const string &filename, bool verbose) : _instance_filename(filename), _verbose(verbose) {

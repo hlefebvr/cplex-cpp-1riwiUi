@@ -16,10 +16,12 @@ protected:
     IloModel _constraints = IloModel(_env, "Minimize number of tardy jobs");
     IloBoolVarArray _x = IloBoolVarArray(_env);
     IloNumVarArray _t = IloNumVarArray(_env);
+    const bool _with_t;
+    const string _model_name;
 
     virtual void create_other_constraints() = 0;
 public:
-    explicit MinimizeTardyJobsModel(const Instance& instance);
+    explicit MinimizeTardyJobsModel(const Instance& instance, const string& model_name, const bool with_t = true);
     void build_model();
     void solve();
 };

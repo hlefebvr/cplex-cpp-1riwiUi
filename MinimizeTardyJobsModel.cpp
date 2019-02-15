@@ -8,7 +8,8 @@
 #include <fstream>
 
 // Abstract Model
-MinimizeTardyJobsModel::MinimizeTardyJobsModel(const Instance &instance) : _instance(instance) {}
+MinimizeTardyJobsModel::MinimizeTardyJobsModel(const Instance &instance, const string& model_name, const bool with_t)
+    : _instance(instance), _model_name(model_name), _with_t(with_t) {}
 
 void MinimizeTardyJobsModel::build_model() {
     if (_instance.verbose()) cout << "Building model" << endl;
@@ -25,7 +26,7 @@ void MinimizeTardyJobsModel::build_model() {
         // create variable x_k and t_k
 
         _x.add(IloBoolVar(_env, ("x_" + to_string(k)).c_str()));
-        _t.add(IloNumVar(_env, ("t_" + to_string(k)).c_str()));
+        if(_with_t) _t.add(IloNumVar(_env, ("t_" + to_string(k)).c_str()));
 
         // append valuation in objective
         objective += job_occ._weight * _x[k];
@@ -50,12 +51,12 @@ void MinimizeTardyJobsModel::build_model() {
 
 void MinimizeTardyJobsModel::solve() {
     IloCplex cplex(_constraints);
-    ofstream logout = ofstream("cplex.log", ios::out);
+    ofstream logout = ofstream((_model_name + ".log").c_str(), ios::out);
 
     cplex.setOut(logout);
     if(_instance.verbose()) {
-        cout << "Exporting cplex model to lpex1.lp" << endl;
-        cplex.exportModel("lpex1.lp");
+        cout << "Exporting cplex model..." << endl;
+        cplex.exportModel((_model_name + ".lp").c_str());
     }
 
     if (_instance.verbose()) cout << "Launching Cplex solver..." << endl;
@@ -70,7 +71,7 @@ void MinimizeTardyJobsModel::solve() {
         IloNumArray t = IloNumArray(_env);
 
         cplex.getValues(x, _x);
-        cplex.getValues(t, _t);
+        if(_with_t) cplex.getValues(t, _t);
 
         const vector<const JobOccurence*>& occurences = _instance.occurences();
         vector<unsigned int> tardy_ids;
@@ -78,10 +79,18 @@ void MinimizeTardyJobsModel::solve() {
         for (unsigned long int i = 0, n = occurences.size() ; i < n ; i += 1) {
             if (x[i] == 1) {
                 const JobOccurence& job_occ = *occurences.at(i);
-                if (job_occ._processing_time > 0)
-                    cout << "job " << job_occ._parent_job_id << " from " << t[i] - job_occ._processing_time << " to " << t[i] << ", p = " << job_occ._processing_time << endl;
-                else
+                if (job_occ._processing_time > 0) {
+                    if (_with_t) {
+                        const int from = t[i] - job_occ._processing_time;
+                        const int to = t[i];
+                        cout << "job " << job_occ._parent_job_id << " from " << t[i] - job_occ._processing_time
+                             << " to " << t[i] << ", p = " << job_occ._processing_time << endl;
+                    } else {
+                        cout << "job " << job_occ._parent_job_id << endl;
+                    }
+                } else {
                     tardy_ids.emplace_back(job_occ._parent_job_id);
+                }
             }
         }
 
@@ -94,7 +103,7 @@ void MinimizeTardyJobsModel::solve() {
 }
 
 // Model A
-MinimizeTardyJobsWithModelA::MinimizeTardyJobsWithModelA(const Instance &instance) : MinimizeTardyJobsModel(instance) {}
+MinimizeTardyJobsWithModelA::MinimizeTardyJobsWithModelA(const Instance &instance) : MinimizeTardyJobsModel(instance, "model_A") {}
 
 void MinimizeTardyJobsWithModelA::create_other_constraints() {
     const vector<const JobOccurence*>& occurences = _instance.occurences();
@@ -112,7 +121,7 @@ void MinimizeTardyJobsWithModelA::create_other_constraints() {
 }
 
 // Model MMKP
-MinimizeTardyJobsWithModelMMKP::MinimizeTardyJobsWithModelMMKP(const Instance &instance) : MinimizeTardyJobsModel(instance) {}
+MinimizeTardyJobsWithModelMMKP::MinimizeTardyJobsWithModelMMKP(const Instance &instance) : MinimizeTardyJobsModel(instance, "model_MMKP", false) {}
 
 void MinimizeTardyJobsWithModelMMKP::create_other_constraints() {
     const vector<const JobOccurence*>& occurences = _instance.occurences();
@@ -134,13 +143,12 @@ void MinimizeTardyJobsWithModelMMKP::create_other_constraints() {
             _constraints.add( constraint <= job_l._deadline).setName(("MMKP_" + to_string(k) + "_" + to_string(l)).c_str());
         }
 
-        _constraints.add( _t[k] == 0 ).setName(("untracked_t_" + to_string(k)).c_str());
     }
 }
 
 
 // Model B
-MinimizeTardyJobsWithModelB::MinimizeTardyJobsWithModelB(const Instance &reversed_instance) : MinimizeTardyJobsModel(reversed_instance) {
+MinimizeTardyJobsWithModelB::MinimizeTardyJobsWithModelB(const Instance &reversed_instance) : MinimizeTardyJobsModel(reversed_instance, "model_B") {
     const vector<const JobOccurence*>& occurences = _instance.occurences();
 
     for (unsigned long int k = 0, n = occurences.size() ; k < n ; k += 1) {
