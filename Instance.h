@@ -40,7 +40,7 @@ struct JobOccurence {
 
     friend ostream& operator<<(ostream& os, const JobOccurence& x);
 
-    explicit JobOccurence(unsigned int parent_id, double release, double deadline, double weight, double processing_time)
+    explicit JobOccurence(unsigned int parent_id, int release, int deadline, int weight, int processing_time)
         : _parent_job_id(parent_id), _release(release), _deadline(deadline), _weight(weight), _processing_time(processing_time) {}
 };
 
@@ -66,7 +66,7 @@ public:
     const vector<const JobOccurence*>& occurences() const { return _occurences; }
     bool verbose() const { return _verbose; }
     int max_deadline() const { return _max_deadline; }
-    string instance_name() const { return _instance_filename;}
+    string instance_name() const { return _instance_filename.substr(_instance_filename.find_last_of("/\\") + 1); }
 
     static Instance reverse(const Instance& instance);
 };

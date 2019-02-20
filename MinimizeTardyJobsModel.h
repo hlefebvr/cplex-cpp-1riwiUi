@@ -21,7 +21,7 @@ protected:
 
     virtual void create_other_constraints() = 0;
 public:
-    explicit MinimizeTardyJobsModel(const Instance& instance, const string& model_name, const bool with_t = true);
+    explicit MinimizeTardyJobsModel(const Instance& instance, const string& model_name, bool with_t = true);
     void build_model();
     void solve();
 };

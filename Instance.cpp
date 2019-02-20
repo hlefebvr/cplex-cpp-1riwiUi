@@ -77,23 +77,24 @@ void Instance::load_jobs_from_instance() {
 
 void Instance::build_occurences_from_jobs() {
     if (_verbose) cout << "Sorting jobs by release date" << endl;
-    sort(_jobs.begin(), _jobs.end(), [](const Job* A, const Job* B) { return A->_release_date < B->_release_date; });
+    vector<const Job*> jobs_copied = _jobs;
+    sort(jobs_copied.begin(), jobs_copied.end(), [](const Job* A, const Job* B) { return A->_release_date < B->_release_date; });
 
-    for (unsigned long int i = 0, n_jobs = _jobs.size() ; i < n_jobs ; i += 1) {
-        const Job& job_i = *_jobs[i];
+    for (unsigned long int i = 0, n_jobs = jobs_copied.size() ; i < n_jobs ; i += 1) {
+        const Job& job_i = *jobs_copied[i];
         if(_verbose) cout << "Creating job occurences for job " << job_i << endl;
         if (_max_deadline < job_i._deadline) _max_deadline = job_i._deadline;
 
         for (unsigned long int j = i + 1 ; j < n_jobs ; j += 1) {
-            const Job& job_j = *_jobs[j];
+            const Job& job_j = *jobs_copied[j];
 
             if (job_i._deadline > job_j._deadline && job_i._release_date + job_i._processing_time + job_j._processing_time < job_j._deadline) {
                 const int from = job_i._release_date;
                 const int to = job_j._deadline;
                 auto new_occurence = new JobOccurence(job_i._id, from, to, 0, job_i._processing_time);
+                _occurences.emplace_back(new_occurence);
 
                 if (_verbose) cout << "\tCreating " << *new_occurence << endl;
-                _occurences.emplace_back(new_occurence);
             } else if (job_i._deadline <= job_j._release_date) {
                 break;
             }
@@ -113,7 +114,7 @@ void Instance::build_occurences_from_jobs() {
 
 void Instance::apply_edf_rule() {
     sort(_occurences.begin(), _occurences.end(), [](const JobOccurence* A, const JobOccurence* B){
-        return A->_deadline < B->_deadline;
+        return pair<int, int>(A->_deadline, A->_release) < pair<int, int>(B->_deadline, B->_release);
     });
 }
 

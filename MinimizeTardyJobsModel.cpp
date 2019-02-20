@@ -8,7 +8,7 @@
 #include <fstream>
 
 // Abstract Model
-MinimizeTardyJobsModel::MinimizeTardyJobsModel(const Instance &instance, const string& model_name, const bool with_t)
+MinimizeTardyJobsModel::MinimizeTardyJobsModel(const Instance &instance, const string& model_name, bool with_t)
     : _instance(instance), _model_name(model_name), _with_t(with_t) {}
 
 void MinimizeTardyJobsModel::build_model() {
@@ -24,9 +24,8 @@ void MinimizeTardyJobsModel::build_model() {
         const JobOccurence& job_occ = *occurences.at(k);
 
         // create variable x_k and t_k
-
         _x.add(IloBoolVar(_env, ("x_" + to_string(k)).c_str()));
-        if(_with_t) _t.add(IloNumVar(_env, ("t_" + to_string(k)).c_str()));
+        if(_with_t) _t.add(IloNumVar(_env, 0, IloInfinity, ("t_" + to_string(k)).c_str()));
 
         // append valuation in objective
         objective += job_occ._weight * _x[k];
@@ -51,16 +50,26 @@ void MinimizeTardyJobsModel::build_model() {
 
 void MinimizeTardyJobsModel::solve() {
     IloCplex cplex(_constraints);
+    cplex.setParam(IloCplex::TiLim, 3600);
+    cplex.setParam(IloCplex::MIPSearch, IloCplex::Traditional);
     ofstream logout = ofstream((_model_name + ".log").c_str(), ios::out);
 
     cplex.setOut(logout);
-    if(_instance.verbose()) {
+    if(true || _instance.verbose()) {
         cout << "Exporting cplex model..." << endl;
         cplex.exportModel((_model_name + ".lp").c_str());
     }
 
     if (_instance.verbose()) cout << "Launching Cplex solver..." << endl;
+
+    IloNum start_time = cplex.getTime();
     cplex.solve();
+    IloNum exec_time = cplex.getTime() - start_time;
+
+    ofstream results_csv = ofstream("results.csv", ios::app);
+    results_csv << _instance.instance_name() << ";" << _instance.jobs().size() << ";" << _instance.occurences().size()
+        << ";" << _model_name << ";" << cplex.getStatus() << ";" << cplex.getObjValue() << ";" << exec_time << endl;
+    results_csv.close();
 
     cout << "Status = " << cplex.getStatus() << endl;
     if (cplex.getStatus() == IloAlgorithm::Optimal) {
@@ -84,7 +93,10 @@ void MinimizeTardyJobsModel::solve() {
                         const int from = t[i] - job_occ._processing_time;
                         const int to = t[i];
                         cout << "job " << job_occ._parent_job_id << " from " << t[i] - job_occ._processing_time
-                             << " to " << t[i] << ", p = " << job_occ._processing_time << endl;
+                             << "(>= " << job_occ._release << ")"
+                             << " to " << t[i]
+                             << "(<= " << job_occ._deadline << ")"
+                             << ", p = " << job_occ._processing_time << endl;
                     } else {
                         cout << "job " << job_occ._parent_job_id << endl;
                     }
@@ -111,6 +123,8 @@ void MinimizeTardyJobsWithModelA::create_other_constraints() {
     for (unsigned long int k = 0, n = occurences.size() ; k < n ; k += 1) {
         const JobOccurence &job_occ = *occurences.at(k);
 
+        cout<< k << " : " << job_occ << endl;
+
         _constraints.add( _t[k] - (job_occ._release+ job_occ._processing_time) * _x[k] >= 0 ).setName(("release_date_" + to_string(k)).c_str());
 
         _constraints.add( _t[k] <= job_occ._deadline ).setName(("deadline_" + to_string(k)).c_str());
@@ -118,10 +132,11 @@ void MinimizeTardyJobsWithModelA::create_other_constraints() {
         if (k == 0) continue;
         _constraints.add( _t[k] - _t[k-1] - job_occ._processing_time * _x[k] >= 0 ).setName(("overlap_" + to_string(k)).c_str());
     }
+
 }
 
 // Model MMKP
-MinimizeTardyJobsWithModelMMKP::MinimizeTardyJobsWithModelMMKP(const Instance &instance) : MinimizeTardyJobsModel(instance, "model_MMKP", false) {}
+MinimizeTardyJobsWithModelMMKP::MinimizeTardyJobsWithModelMMKP(const Instance &instance) : MinimizeTardyJobsModel(instance, "model_KP", false) {}
 
 void MinimizeTardyJobsWithModelMMKP::create_other_constraints() {
     const vector<const JobOccurence*>& occurences = _instance.occurences();
